@@ -1,1 +1,1 @@
-![on-chain.png](xdd)
+![On chain setup](on-chain.png)
