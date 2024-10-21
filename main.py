@@ -26,7 +26,8 @@ resp = requests.post(
         "scope": "openid email",
         "response_type": "code",
         "address": CLIENT_ID,
-    })
+    },
+)
 
 resp_body = resp.json()
 
@@ -35,7 +36,9 @@ challenge = resp_body["challenge"]
 message = eth_account.messages.encode_defunct(text=challenge)
 
 # Sign the challenge with a signer attached to the developer license.
-signature = w3.eth.account.sign_message(message, SIGNER_PRIVATE_KEY).signature.to_0x_hex()
+signature = w3.eth.account.sign_message(
+    message, SIGNER_PRIVATE_KEY
+).signature.to_0x_hex()
 
 # Send the challenge back.
 resp = requests.post(
@@ -46,7 +49,8 @@ resp = requests.post(
         "grant_type": "authorization_code",
         "state": resp_body["state"],
         "signature": signature,
-    })
+    },
+)
 
 # The subject of this token is the developer license address.
 access_token = resp.json()["access_token"]
@@ -59,9 +63,10 @@ resp = requests.post(
     json={
         "nftContractAddress": MFR_NFT_ADDR,
         "tokenId": MFR_TOKEN_ID,
-        "privileges": [MFR_DEVICE_SEEN_PRIV]
+        "privileges": [MFR_DEVICE_SEEN_PRIV],
     },
-    headers={"Authorization": "Bearer " + access_token})
+    headers={"Authorization": "Bearer " + access_token},
+)
 
 priv_token = resp.json()["token"]
 
@@ -78,10 +83,10 @@ query DeviceLastSeen($tokenId: Int!) {
 
 resp = requests.post(
     "https://telemetry-api.dev.dimo.zone/query",
-    json={
-        "query": query,
-        "variables": {"tokenId": DEVICE_TOKEN_ID}
-    },
-    headers={"Authorization": "Bearer " + priv_token})
+    json={"query": query, "variables": {"tokenId": DEVICE_TOKEN_ID}},
+    headers={"Authorization": "Bearer " + priv_token},
+)
 
-print(resp.json())
+last_active = resp.json()["data"]["deviceActivity"]["lastActive"]
+
+print("Device with token id {} last active at {}".format(DEVICE_TOKEN_ID, last_active))
